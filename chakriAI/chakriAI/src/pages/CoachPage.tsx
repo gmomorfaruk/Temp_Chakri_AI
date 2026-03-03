@@ -1,7 +1,35 @@
 import { useState, useEffect, useRef } from 'react'
 import PageHeader from '../components/PageHeader'
 
-const vivaTopics = [
+// Define TypeScript interfaces
+interface Topic {
+  id: string;
+  name: string;
+  icon: string;
+  difficulty: string;
+}
+
+interface Mode {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+  prompt: string;
+}
+
+interface Message {
+  id: number;
+  text: string;
+  sender: 'user' | 'ai';
+  timestamp: string;
+}
+
+interface ConversationEntry {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+const vivaTopics: Topic[] = [
   { id: 'ds', name: 'Data Structures', icon: '📊', difficulty: 'Intermediate' },
   { id: 'sys-design', name: 'System Design Basics', icon: '🏗️', difficulty: 'Advanced' },
   { id: 'behavioral', name: 'Behavioral Interview', icon: '💬', difficulty: 'Beginner' },
@@ -10,7 +38,7 @@ const vivaTopics = [
   { id: 'dbms', name: 'Database Management', icon: '🗄️', difficulty: 'Intermediate' }
 ]
 
-const interviewModes = [
+const interviewModes: Mode[] = [
   {
     id: 'mock',
     name: 'Mock Interview',
@@ -34,7 +62,7 @@ const interviewModes = [
   }
 ]
 
-const sampleQuestions = {
+const sampleQuestions: Record<string, string[]> = {
   ds: [
     "Explain the difference between an array and a linked list.",
     "What is a hash table and how does it handle collisions?",
@@ -54,18 +82,28 @@ const sampleQuestions = {
     "What was the biggest technical challenge in your last project?",
     "How did you ensure code quality in your team?",
     "Explain the architecture decisions you made in your recent project."
+  ],
+  algorithms: [
+    "Explain the difference between BFS and DFS.",
+    "How would you implement a priority queue?",
+    "Describe the quicksort algorithm and its time complexity."
+  ],
+  dbms: [
+    "What is normalization and why is it important?",
+    "Explain ACID properties in databases.",
+    "What's the difference between SQL and NoSQL databases?"
   ]
 }
 
 function CoachPage() {
-  const [selectedMode, setSelectedMode] = useState(null)
-  const [selectedTopic, setSelectedTopic] = useState(null)
-  const [messages, setMessages] = useState([])
+  const [selectedMode, setSelectedMode] = useState<string | null>(null)
+  const [selectedTopic, setSelectedTopic] = useState<string | null>(null)
+  const [messages, setMessages] = useState<Message[]>([])
   const [inputMessage, setInputMessage] = useState('')
   const [isTyping, setIsTyping] = useState(false)
-  const [conversationHistory, setConversationHistory] = useState([])
+  const [conversationHistory, setConversationHistory] = useState<ConversationEntry[]>([])
   const [difficultyLevel, setDifficultyLevel] = useState('intermediate')
-  const messagesEndRef = useRef(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -76,7 +114,7 @@ function CoachPage() {
   }, [messages])
 
   // Simulated AI response with context awareness
-  const generateAIResponse = async (userMessage) => {
+  const generateAIResponse = async (userMessage: string): Promise<string> => {
     setIsTyping(true)
     
     // Simulate network delay
@@ -94,18 +132,17 @@ function CoachPage() {
       
 I'm here to help you practice and improve. Let's start with a ${difficultyLevel} level question:
 
-${getRandomQuestion(selectedTopic, difficultyLevel)}
+${getRandomQuestion(selectedTopic || 'behavioral', difficultyLevel)}
 
 Take your time to answer, and I'll provide constructive feedback.`
     } else {
       // Generate contextual responses
-      const lastMessage = conversationHistory[conversationHistory.length - 1]
       const messageCount = conversationHistory.length
       
       if (messageCount % 2 === 1) {
         // After user's answer, provide feedback and next question
-        response = generateFeedback(userMessage, selectedTopic, difficultyLevel)
-        response += '\n\n' + getRandomQuestion(selectedTopic, difficultyLevel)
+        response = generateFeedback(userMessage, selectedTopic || 'behavioral', difficultyLevel)
+        response += '\n\n' + getRandomQuestion(selectedTopic || 'behavioral', difficultyLevel)
       } else {
         // After our question, wait for user's answer
         response = "I'm listening. Take your time to answer the question thoroughly."
@@ -116,7 +153,7 @@ Take your time to answer, and I'll provide constructive feedback.`
     return response
   }
 
-  const getRandomQuestion = (topicId, difficulty) => {
+  const getRandomQuestion = (topicId: string, difficulty: string): string => {
     const questions = sampleQuestions[topicId] || sampleQuestions.behavioral
     const baseQuestion = questions[Math.floor(Math.random() * questions.length)]
     
@@ -133,7 +170,7 @@ Take your time to answer, and I'll provide constructive feedback.`
     }
   }
 
-  const generateFeedback = (answer, topicId, difficulty) => {
+  const generateFeedback = (answer: string, topicId: string, difficulty: string): string => {
     const feedbackTemplates = [
       "Good answer! You've covered the key points. To improve, consider discussing real-world applications.",
       "Solid explanation. Let's dig deeper - how would this concept apply in a large-scale system?",
@@ -153,7 +190,7 @@ Take your time to answer, and I'll provide constructive feedback.`
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return
 
-    const userMessage = {
+    const userMessage: Message = {
       id: Date.now(),
       text: inputMessage,
       sender: 'user',
@@ -167,7 +204,7 @@ Take your time to answer, and I'll provide constructive feedback.`
     // Get AI response
     const aiResponseText = await generateAIResponse(inputMessage)
     
-    const aiResponse = {
+    const aiResponse: Message = {
       id: Date.now() + 1,
       text: aiResponseText,
       sender: 'ai',
@@ -178,16 +215,16 @@ Take your time to answer, and I'll provide constructive feedback.`
     setConversationHistory(prev => [...prev, { role: 'assistant', content: aiResponseText }])
   }
 
-  const startSession = (mode, topic) => {
-    setSelectedMode(mode)
-    setSelectedTopic(topic)
+  const startSession = (modeId: string, topicId: string) => {
+    setSelectedMode(modeId)
+    setSelectedTopic(topicId)
     setMessages([])
     setConversationHistory([])
     
     // Add welcome message
-    const welcomeMessage = {
+    const welcomeMessage: Message = {
       id: Date.now(),
-      text: `🎯 Starting ${interviewModes.find(m => m.id === mode)?.name} session on ${vivaTopics.find(t => t.id === topic)?.name}.
+      text: `🎯 Starting ${interviewModes.find(m => m.id === modeId)?.name} session on ${vivaTopics.find(t => t.id === topicId)?.name}.
       
 I'll be your AI coach today. Let's begin when you're ready!`,
       sender: 'ai',
@@ -288,7 +325,7 @@ I'll be your AI coach today. Let's begin when you're ready!`,
             padding: '1rem',
             marginBottom: '1rem'
           }}>
-            {messages.map((message) => (
+            {messages.map((message: Message) => (
               <div
                 key={message.id}
                 style={{
