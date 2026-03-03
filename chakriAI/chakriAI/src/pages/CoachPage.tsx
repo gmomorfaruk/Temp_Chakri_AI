@@ -141,7 +141,7 @@ Take your time to answer, and I'll provide constructive feedback.`
       
       if (messageCount % 2 === 1) {
         // After user's answer, provide feedback and next question
-        response = generateFeedback(userMessage, selectedTopic || 'behavioral', difficultyLevel)
+        response = generateFeedback(difficultyLevel)
         response += '\n\n' + getRandomQuestion(selectedTopic || 'behavioral', difficultyLevel)
       } else {
         // After our question, wait for user's answer
@@ -170,7 +170,7 @@ Take your time to answer, and I'll provide constructive feedback.`
     }
   }
 
-  const generateFeedback = (answer: string, topicId: string, difficulty: string): string => {
+  const generateFeedback = (difficulty: string): string => {
     const feedbackTemplates = [
       "Good answer! You've covered the key points. To improve, consider discussing real-world applications.",
       "Solid explanation. Let's dig deeper - how would this concept apply in a large-scale system?",
